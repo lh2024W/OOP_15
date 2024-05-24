@@ -7,21 +7,143 @@ using namespace std;
 
 class Animal {};
 
-class Herbivore abstract : public Animal {
+class Herbivore : public Animal {
+protected:
+    bool alive = true;
 public:
-    virtual bool IsAlive() { return true; };
-    virtual void EatGrass() {};
+    virtual bool IsAlive() { return alive; }
+    virtual void EatGrass() {}
+    virtual void Die() { alive = false; }
 };
 
-class Carnivore abstract : public Animal {
+class Carnivore : public Animal {
 public:
-    virtual void Eat(Herbivore* herbivore) {};
+    virtual void Eat(Herbivore* herbivore) {}
 };
 
-class Continent abstract {
+class Continent {
 public:
-    virtual void Populate(vector<Herbivore*> herbivores, vector<Carnivore*> carnivores) = 0;
+    virtual void Populate(vector<Herbivore*>& herbivores, vector<Carnivore*>& carnivores) = 0;
 };
+
+class Wildebeest : public Herbivore {
+    int weight;
+public:
+    Wildebeest() : Wildebeest(25) {}
+
+    Wildebeest(int weight) {
+        SetWeight(weight);
+    }
+
+    void SetWeight(int weight) {
+        this->weight = weight;
+    }
+
+    void EatGrass() override {
+        weight += 10;
+        cout << "Гну ест. Его вес: " << weight << "\n";
+    }
+
+    bool IsAlive() override {
+        return weight > 0;
+    }
+
+    int GetWeight() const {
+        return weight;
+    }
+
+    void Die() override {
+        Herbivore::Die();
+        weight = 0;
+    }
+};
+
+class Lion : public Carnivore {
+    int power;
+public:
+    Lion() : Lion(45) {}
+
+    Lion(int power) {
+        SetPower(power);
+    }
+
+    void SetPower(int power) {
+        this->power = power;
+    }
+
+    void Eat(Herbivore* herbivore) override {
+        Wildebeest* w = dynamic_cast<Wildebeest*>(herbivore);
+        if (w && power > w->GetWeight()) {
+            power += 10;
+            w->Die();
+            cout << "Лев ест гну. Его сила: " << power << "\n";
+        }
+        else {
+            power -= 10;
+            cout << "Лев не ест гну. Его сила: " << power << "\n";
+        }
+    }
+};
+
+class Bison : public Herbivore {
+    int weight;
+public:
+    Bison() : Bison(40) {}
+
+    Bison(int weight) {
+        SetWeight(weight);
+    }
+
+    void SetWeight(int weight) {
+        this->weight = weight;
+    }
+
+    void EatGrass() override {
+        weight += 10;
+        cout << "Бизон ест. Его вес: " << weight << "\n";
+    }
+
+    bool IsAlive() override {
+        return weight > 0;
+    }
+
+    int GetWeight() const {
+        return weight;
+    }
+
+    void Die() override {
+        Herbivore::Die();
+        weight = 0;
+    }
+};
+
+class Wolf : public Carnivore {
+    int power;
+public:
+    Wolf() : Wolf(50) {}
+
+    Wolf(int power) {
+        SetPower(power);
+    }
+
+    void SetPower(int power) {
+        this->power = power;
+    }
+
+    void Eat(Herbivore* herbivore) override {
+        Bison* b = dynamic_cast<Bison*>(herbivore);
+        if (b && power > b->GetWeight()) {
+            power += 10;
+            b->Die();
+            cout << "Волк ест бизона. Его сила: " << power << "\n";
+        }
+        else {
+            power -= 10;
+            cout << "Волк не ест бизона. Его сила: " << power << "\n";
+        }
+    }
+};
+
 
 class AnimalWorld {
     vector<Continent*> continents;
@@ -30,7 +152,7 @@ class AnimalWorld {
 
 public:
     ~AnimalWorld() {
-        cout << "Animal World destroyed\n";
+        cout << "Мир животных разрушен\n";
         for (auto continent : continents) {
             delete continent;
         }
@@ -53,7 +175,7 @@ public:
     }
 
     void MealsHerbivores() {
-        cout << "Herbivores eat grass...\n";
+        cout << "Травоядные едят траву...\n";
         for (auto herbivore : herbivores) {
             if (herbivore->IsAlive()) {
                 herbivore->EatGrass();
@@ -62,7 +184,7 @@ public:
     }
 
     void NutritionCarnivores() {
-        cout << "Harnivores hunting on herbivores...\n";
+        cout << "Хищники охотятся на травоядных...\n";
         for (auto carnivore : carnivores) {
             for (auto herbivore : herbivores) {
                 if (herbivore->IsAlive()) {
@@ -73,126 +195,33 @@ public:
     }
 };
 
-class Africa : public Continent {};
-
-class NorthAmerica : public Continent {};
-
-class Wildebeest : public Herbivore {
+class Africa : public Continent {
 public:
-    Africa* Africa;
-    int weight = 10;
-
-    Wildebeest() : Wildebeest(25) {};
-
-    Wildebeest(int weight) {
-        weight = weight;
-    };
-
-    ~Wildebeest() {};
-
-    void EatGrass() {
-        weight = weight + 10;
-        cout << "Wildebeest eat. Her weight: " << weight << "\n";
-    };
-
-    bool IsAlive() const {
-        if (weight != 0) return true;
-    };
+    void Populate(vector<Herbivore*>& herbivores, vector<Carnivore*>& carnivores) override {
+        herbivores.push_back(new Wildebeest());
+        carnivores.push_back(new Lion());
+    }
 };
 
-class Lion : public Carnivore {
+class NorthAmerica : public Continent {
 public:
-    Africa* Africa;
-    int power = 40;
-
-    Lion() : Lion(45) {};
-    //главный к-тор
-    Lion(int power) {
-        power = power;
-    };
-
-    ~Lion() {};
-
-    void Eat(Wildebeest* w) {
-        if (power > w->weight) {
-            power = power + 10;
-            cout << "Lion eat. His power: " << power << "\n";
-        }
-        else {
-            power = power - 10;
-            cout << "Lion do not eat wildebeest. His power: " << power << "\n";
-        }
-    };
+    void Populate(vector<Herbivore*>& herbivores, vector<Carnivore*>& carnivores) override {
+        herbivores.push_back(new Bison());
+        carnivores.push_back(new Wolf());
+    }
 };
 
-class Bison : public Herbivore {
-public:
-    NorthAmerica* NorthAmerica;
-    int weight = 30;
 
-    Bison() : Bison(40) {};
-    //главный к-тор
-    Bison(int weight) {
-        weight = weight;
-    };
-
-    ~Bison() {};
-
-    void EatGrass() {
-        weight = weight + 10;
-        cout << "Bison eat. His weight: " << weight << "\n";
-    };
-    bool IsAlive() const {
-        if (weight != 0) return true;
-    };
-};
-
-class Wolf : public Carnivore {
-public:
-    NorthAmerica* NorthAmerica;
-    int power = 35;
-
-    Wolf() : Wolf(50) {};
-    //главный к-тор
-    Wolf(int power) {
-        power = power;
-    };
-
-    ~Wolf() {};
-
-    void Eat(Bison* b) {
-        if (power > b->weight) {
-            power = power + 10;
-            cout << "Wolf eat. His power: " << power << "\n";
-        }
-        else {
-            power = power - 10;
-            cout << "Wolf do not eat bison. His power: " << power << "\n";
-        }
-    };
-};
-
-int main()
-{
-    Herbivore* herbivore;
-    Carnivore* carnivore;
-
-    herbivore = new Bison;
-    herbivore->EatGrass();
-    carnivore = new Wolf;
-    carnivore->Eat(herbivore);
-    
-    herbivore = new Wildebeest;
-    herbivore->EatGrass();
-    carnivore = new Lion;
-    carnivore->Eat(herbivore);
-    
+int main() {
+    setlocale(0, "");
     AnimalWorld a;
+    a.AddContinent(new Africa());
+    a.AddContinent(new NorthAmerica());
+
+    a.PopulateWorld();
     a.MealsHerbivores();
     a.NutritionCarnivores();
-   
 }
-
 
 // Запуск программы: CTRL+F5 или меню "Отладка" > "Запуск без отладки"
 // Отладка программы: F5 или меню "Отладка" > "Запустить отладку"
